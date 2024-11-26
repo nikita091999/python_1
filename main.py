@@ -3,9 +3,9 @@ import requests
 import json
 
 # Configuration
-GITHUB_REPO_URL = "https://raw.githubusercontent.com/Vishal-Birajdar/Micropython-/main/"  # Base URL for your GitHub repo
-FILES_TO_UPDATE = ["shared.py", "esecurity.py", "config.json"]  # Files to check and update
-LOCAL_PATH = "/path/to/local/files/"  # Local directory where files are stored
+GITHUB_REPO_URL = "https://github.com/nikita091999/Micropython_1/blob/main/main.py"  
+FILES_TO_UPDATE = ["main.py", "config1.json"] 
+LOCAL_PATH = "/home/datamann/"  
 
 def download_file(file_name, url, local_path):
     """Download a file from the given URL and save it locally."""
