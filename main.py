@@ -1,11 +1,10 @@
 import os
 import requests
-import json
 
 # Configuration
-GITHUB_REPO_URL = "https://github.com/nikita091999/Micropython_1/blob/main/main.py"  
-FILES_TO_UPDATE = ["main.py", "config1.json"] 
-LOCAL_PATH = "/home/datamann/"  
+BASE_RAW_URL = "https://github.com/nikita091999/python_1/blob/main/"  # Base URL for raw content
+FILES_TO_UPDATE = ["main.py"]  # Files to download
+LOCAL_PATH = "/home/datamann/"  # Local directory to save the files
 
 def download_file(file_name, url, local_path):
     """Download a file from the given URL and save it locally."""
@@ -24,7 +23,7 @@ def download_file(file_name, url, local_path):
 def check_and_update_files():
     """Check for updates and download the latest files from the repository."""
     for file_name in FILES_TO_UPDATE:
-        file_url = GITHUB_REPO_URL + file_name
+        file_url = BASE_RAW_URL + file_name
         download_file(file_name, file_url, LOCAL_PATH)
 
 def restart_device():
