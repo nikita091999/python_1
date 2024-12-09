@@ -1,10 +1,9 @@
 import os
 import requests
 
-# Configuration
-BASE_RAW_URL = "https://github.com/nikita091999/python_1/blob/main/"  # Base URL for raw content
-FILES_TO_UPDATE = ["main.py"]  # Files to download
-LOCAL_PATH = "/home/datamann/"  # Local directory to save the files
+BASE_RAW_URL = "https://github.com/nikita091999/python_1/blob/main/"  
+FILES_TO_UPDATE = ["main.py","config1.json"]  
+LOCAL_PATH = "/home/datamann/"  
 
 def download_file(file_name, url, local_path):
     """Download a file from the given URL and save it locally."""
@@ -37,7 +36,6 @@ if __name__ == "__main__":
         check_and_update_files()
         print("All files updated successfully!")
         
-        # Restart the device after updates
         restart_device()
     except Exception as e:
         print(f"Error during update: {e}")
