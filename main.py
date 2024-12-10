@@ -1,6 +1,6 @@
 import os
 import requests
-#12
+
 BASE_RAW_URL = "https://github.com/nikita091999/python_1/blob/main/"  
 FILES_TO_UPDATE = ["main.py","config1.json"]  
 LOCAL_PATH = "/home/datamann/"  
@@ -38,5 +38,4 @@ if __name__ == "__main__":
         
         restart_device()
     except Exception as e:
-        print(f"Error during update: {e}")
-       
+        print(f"Error during update: {e}")   
