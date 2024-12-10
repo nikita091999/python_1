@@ -2,7 +2,7 @@ import os
 import requests
 
 BASE_RAW_URL = "https://github.com/nikita091999/python_1/blob/main/"  
-FILES_TO_UPDATE = ["main.py","config1.json"]  
+FILES_TO_UPDATE = ["main.py"]  
 LOCAL_PATH = "/home/datamann/"  
 
 def download_file(file_name, url, local_path):
