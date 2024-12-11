@@ -7,7 +7,7 @@ import time
 BASE_RAW_URL = "https://raw.githubusercontent.com/nikita091999/python_1/main/"
 DEPOSIT_DIR = "/home/datamann/deposit"
 MAIN_DIR = "/home/datamann/main"
-FILES_TO_UPDATE = ["main.py", "config1.json"]
+FILES_TO_UPDATE = ["updatefile.py", "config1.json"]
 
 def ensure_directories():
     for directory in [DEPOSIT_DIR, MAIN_DIR]:
