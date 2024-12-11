@@ -9,15 +9,15 @@ DEPOSIT_DIR = "/home/datamann/deposit"
 MAIN_DIR = "/home/datamann/main"
 FILES_TO_UPDATE = ["updatefile.py", "config1.json"]
 
+# Ensure required directories exist
 def ensure_directories():
-    """Ensure the required directories exist."""
     for directory in [DEPOSIT_DIR, MAIN_DIR]:
         if not os.path.exists(directory):
             os.makedirs(directory)
             print(f"Created missing directory: {directory}")
 
+# Download files from GitHub
 def download_file(file_name, url, dest_dir):
-    """Download a file from a URL and save it in the destination directory."""
     try:
         print(f"Downloading {file_name} from {url}...")
         response = requests.get(url, timeout=10)
@@ -31,49 +31,39 @@ def download_file(file_name, url, dest_dir):
     except Exception as e:
         print(f"Error updating {file_name}: {e}")
 
+# Update specified files
 def update_files():
-    """Update all files listed in FILES_TO_UPDATE."""
     for file_name in FILES_TO_UPDATE:
         raw_url = BASE_RAW_URL + file_name
         download_file(file_name, raw_url, MAIN_DIR)
 
-def start_update_script():
-    """Run updatefile.py if it exists."""
+# Start updatefile.py
+def start_updatefile():
     update_script = os.path.join(MAIN_DIR, "updatefile.py")
     if os.path.exists(update_script):
-        print("Running updatefile.py...")
-        sp.run(["python3", update_script], cwd=MAIN_DIR, check=True)
+        print("Starting updatefile.py...")
+        return sp.Popen(["python3", update_script], cwd=MAIN_DIR)
     else:
-        print("updatefile.py not found. Skipping.")
+        raise FileNotFoundError(f"{update_script} not found!")
 
-def start_main():
-    """Start the main.py script."""
-    main_script = os.path.join(MAIN_DIR, "main.py")
-    if os.path.exists(main_script):
-        print("Starting main.py...")
-        return sp.Popen(["python3", main_script], cwd=MAIN_DIR)
-    else:
-        raise FileNotFoundError(f"{main_script} not found!")
-
+# Monitor updatefile.py and perform updates
 def monitor_and_update():
-    """Monitor and update scripts, restarting main.py as needed."""
     ensure_directories()
     update_files()
 
     while True:
         try:
-            start_update_script()  # Ensure updatefile.py is run
-            main_proc = start_main()
+            main_proc = start_updatefile()
 
             while main_proc.poll() is None:
-                print("Running main.py. Checking for updates in the background...")
-                time.sleep(60)
+                print("Running updatefile.py. Checking for updates in the background...")
+                time.sleep(60)  # Check for updates every 60 seconds
                 update_files()
 
-            print("main.py process has stopped. Restarting with updated files...")
+            print("updatefile.py process has stopped. Restarting with updated files...")
         except FileNotFoundError as e:
             print(e)
-            time.sleep(10)  # Retry after 10 seconds if main.py not found
+            time.sleep(10)  # Retry after 10 seconds if updatefile.py not found
         except Exception as e:
             print(f"Error during monitoring: {e}")
         finally:
