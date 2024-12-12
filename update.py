@@ -396,49 +396,120 @@ def update_version():
     else:
         print(f"Failed to fetch version information from {raw_url}")
 
-def start_updatefile():
-    updatefile_script = os.path.join(MAIN_DIR, "update.py")
-    if os.path.exists(updatefile_script):
-        print("Starting update.py...")
-        return sp.Popen(["python3", updatefile_script], cwd=MAIN_DIR)
-    else:
-        raise FileNotFoundError(f"{updatefile_script} not found!")
+# def start_updatef():
+#     updatefile_script = os.path.join(MAIN_DIR, "update.py")
+#     if os.path.exists(updatefile_script):
+#         print("Starting update.py...")
+#         return sp.Popen(["python3", updatefile_script], cwd=MAIN_DIR)
+#     else:
+#         raise FileNotFoundError(f"{updatefile_script} not found!")
 
-def monitor_and_update():
+def start_updatefile():
+    updatefile_script = "/home/datamann/main/update.py"
+
+    if not os.path.exists(updatefile_script):
+        print(f"Warning: {updatefile_script} not found. Skipping update.")
+        return None
+
+    # Start the updatefile.py script
+    return subprocess.Popen(["python3", updatefile_script])
+
+# def monitor_and_update():
+#     ensure_directories()
+
+#     while True:
+#         try:
+#             # Check for version updates and download the necessary files
+#             update_version()
+
+#             # Start the updatefile.py script
+#             update_proc = start_updatefile()
+
+#             while update_proc.poll() is None:
+#                 print("Running update.py. Checking for updates in the background...")
+#                 time.sleep(60)
+#                 update_version()  # Check for updates periodically
+
+#             print("updatefile.py process has stopped. Restarting with updated files...")
+#         except FileNotFoundError as e:
+#             print(e)
+#             time.sleep(10)  # Retry after 10 seconds if updatefile.py not found
+#         except Exception as e:
+#             print(f"Error during monitoring: {e}")
+#         finally:
+#             time.sleep(5)
+# if __name__ == "__main__":
+   
+#     if connect_to_wifi(wifi_config1.get('ssid'), wifi_config1.get('password')):
+#         client = connect_mqtt()  
+#         publish_heartbeat(client, online=True)  
+#         load_buffer_from_file()
+
+       
+#     arm_state_value = buffer.get(device_info['device_id'], {}).get("D", "00")
+#     print(f"Restored arm state: {arm_state_value}")
+#     monitor_and_update()
+#     if arm_state_value == "10":
+#         arm_state["armed"] = True
+#         GPIO.output(D_PIN, GPIO.HIGH)
+#         print("System armed on startup.")
+#     else:
+#         arm_state["armed"] = False
+#         GPIO.output(D_PIN, GPIO.LOW)
+#         print("System disarmed on startup.")
+#     while True:
+#         message = json.dumps(buffer)
+#         client.publish(s_topic, message)
+#         time.sleep(1)
+
+
+import time
+
+def monitor_and_update(last_version):
     ensure_directories()
 
-    while True:
-        try:
-            # Check for version updates and download the necessary files
-            update_version()
+    try:
+        # Check for version updates and download the necessary files
+        current_version = update_version()  # Get the current version
 
-            # Start the updatefile.py script
+        # Only check for updates if the version has changed
+        if current_version != last_version:
+            print("New version found, updating...")
             update_proc = start_updatefile()
 
-            while update_proc.poll() is None:
-                print("Running update.py. Checking for updates in the background...")
-                time.sleep(60)
-                update_version()  # Check for updates periodically
+            # Only poll if the process was successfully started
+            if update_proc:
+                while update_proc.poll() is None:
+                    print("Running update.py. Checking for updates in the background...")
+                    time.sleep(60)  # Check the update periodically while running
+                print("updatefile.py process has stopped. Restarting with updated files...")
+            else:
+                print("Update process not started. Skipping update.")
 
-            print("updatefile.py process has stopped. Restarting with updated files...")
-        except FileNotFoundError as e:
-            print(e)
-            time.sleep(10)  # Retry after 10 seconds if updatefile.py not found
-        except Exception as e:
-            print(f"Error during monitoring: {e}")
-        finally:
-            time.sleep(5)
-if __name__ == "__main__":
-    monitor_and_update()
+            # Return the updated version after the update is processed
+            return current_version
+        else:
+            print("No version change detected. Skipping update.")
+            return last_version
+
+    except FileNotFoundError as e:
+        print(e)
+        time.sleep(10)  # Retry after 10 seconds if updatefile.py not found
+        return last_version
+    except Exception as e:
+        print(f"Error during monitoring: {e}")
+        return last_version
+
+
+def main():
     if connect_to_wifi(wifi_config1.get('ssid'), wifi_config1.get('password')):
         client = connect_mqtt()  
         publish_heartbeat(client, online=True)  
         load_buffer_from_file()
 
-       
     arm_state_value = buffer.get(device_info['device_id'], {}).get("D", "00")
     print(f"Restored arm state: {arm_state_value}")
-    
+
     if arm_state_value == "10":
         arm_state["armed"] = True
         GPIO.output(D_PIN, GPIO.HIGH)
@@ -447,7 +518,20 @@ if __name__ == "__main__":
         arm_state["armed"] = False
         GPIO.output(D_PIN, GPIO.LOW)
         print("System disarmed on startup.")
+
+    last_version = None  # Initialize with no version
+
     while True:
+        # Monitor and update based on version change
+        last_version = monitor_and_update(last_version)
+
+        # Publish message to MQTT
         message = json.dumps(buffer)
         client.publish(s_topic, message)
-        time.sleep(1)
+
+        # Ensure the system continues to run without stopping
+        time.sleep(1)  # Adjust the sleep time if needed
+
+
+if __name__ == "__main__":
+    main()
