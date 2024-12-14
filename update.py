@@ -382,7 +382,7 @@ def monitor_and_update(last_version):
     ensure_directories()
 
     try:
-        current_version = update_version()  # Get the current version
+        current_version = update_version()  
 
         if current_version != last_version:
             print("New version found, updating...")
@@ -392,7 +392,7 @@ def monitor_and_update(last_version):
                 while update_proc.poll() is None:
                     print("Running update.py. Checking for updates in the background...")
                     time.sleep(10)  
-                print("updatefile.py process has stopped. Restarting with updated files...")
+                print("update.py process has stopped. Restarting with updated files...")
             else:
                 print("Update process not started. Skipping update.")
 
@@ -403,7 +403,7 @@ def monitor_and_update(last_version):
 
     except FileNotFoundError as e:
         print(e)
-        time.sleep(10)  # Retry after 10 seconds if updatefile.py not found
+        time.sleep(10) 
         return last_version
     except Exception as e:
         print(f"Error during monitoring: {e}")
@@ -428,13 +428,13 @@ def main():
         GPIO.output(D_PIN, GPIO.LOW)
         print("System disarmed on startup.")
 
-    last_version = None  # Initialize with no version
+    last_version = None 
 
     while True:
         last_version = monitor_and_update(last_version)
         message = json.dumps(buffer)
         client.publish(s_topic, message)
-        time.sleep(1)  # Adjust the sleep time if needed
+        time.sleep(1)  
 
 
 if __name__ == "__main__":
