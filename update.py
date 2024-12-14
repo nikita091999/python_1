@@ -291,32 +291,7 @@ def monitor_sensors(client):
         prev_s1, prev_s2 = current_s1, current_s2
         
         time.sleep(sensor_delay)
-
-# def connect_mqtt():
-#     client = mqtt.Client()
-#     client = mqtt.Client(protocol=mqtt.MQTTv311) 
-#     client.tls_set(certfile=None, keyfile=None, cert_reqs=ssl.CERT_NONE, tls_version=ssl.PROTOCOL_TLSv1_2)
-
-#     client.username_pw_set(mqtt_config.get('user'), mqtt_config.get('password'))
-#     client.tls_set()  
-#     client.on_message = on_message
-
-#     try:
-#         client.connect(mqtt_config.get('broker'), mqtt_config.get('port', 8883))
-#         print("Connected to MQTT broker")
-#         client.subscribe([
-#            (R1_topic,1),(R2_topic,1),(R3_topic,1),(R4_topic,1),(arm_disarm_cc, 1),(reset_topic, 1),(m_reset_topic, 1),(fd_topic,1) 
-#         ])
-#         print("Subscribed to MQTT topics")
-#         client.loop_start()
-
-#         threading.Thread(target=monitor_sensors, args=(client,), daemon=True).start()
-#         return client
-#     except Exception as e:
-#         print(f"Failed to connect MQTT: {e}")
-#         exit()
-
-
+        
 def connect_mqtt():
     client = mqtt.Client(protocol=mqtt.MQTTv311)  
     client.tls_set(certfile=None, keyfile=None, cert_reqs=ssl.CERT_NONE, tls_version=ssl.PROTOCOL_TLSv1_2)
