@@ -291,7 +291,7 @@ def monitor_sensors(client):
         prev_s1, prev_s2 = current_s1, current_s2
         
         time.sleep(sensor_delay)
-        
+#+++++++++++++++++++++++++++++++ connect mqtt++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++        
 def connect_mqtt():
     client = mqtt.Client(protocol=mqtt.MQTTv311)  
     client.tls_set(certfile=None, keyfile=None, cert_reqs=ssl.CERT_NONE, tls_version=ssl.PROTOCOL_TLSv1_2)
@@ -320,13 +320,13 @@ def connect_mqtt():
         print(f"Failed to connect MQTT: {e}")
         exit()
 
-
+#++++++++++++++++++++++++++++++ ensure_directories in update code +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 def ensure_directories():
     for directory in [DEPOSIT_DIR, MAIN_DIR]:
         if not os.path.exists(directory):
             os.makedirs(directory)
             print(f"Created missing directory: {directory}")
-
+#++++++++++++++++++++++++++++++++++++++++++++++download_file++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 def download_file(file_name, url, dest_dir):
     try:
         print(f"Downloading {file_name} from {url}...")
@@ -340,16 +340,15 @@ def download_file(file_name, url, dest_dir):
         print(f"HTTP error while updating {file_name}: {http_err}")
     except Exception as e:
         print(f"Error updating {file_name}: {e}")
-
+#+++++++++++++++++++++++++++++++++++++++++++++++++++get_current_version++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 def get_current_version():
     if os.path.exists(VERSION_FILE):
         with open(VERSION_FILE, "r") as file:
             version_data = json.load(file)
             return version_data.get("version", "")
     return ""
-
+#+++++++++++++++++++++++++++++++++++++++++++++++++++++update_version++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 def update_version():
-    # Check the latest version from the server
     raw_url = BASE_RAW_URL + "version.json"
     response = requests.get(raw_url, timeout=10)
     if response.status_code == 200:
@@ -359,10 +358,8 @@ def update_version():
 
         if latest_version != current_version:
             print(f"New version found: {latest_version}. Updating files...")
-            # Download the new files only if version is updated
             for file_name in FILES_TO_UPDATE:
                 download_file(file_name, BASE_RAW_URL + file_name, MAIN_DIR)
-            # Update the version
             with open(VERSION_FILE, "w") as file:
                 json.dump(latest_version_data, file, indent=4)
             print("Version updated successfully.")
@@ -370,98 +367,35 @@ def update_version():
             print("No new version available. Skipping update.")
     else:
         print(f"Failed to fetch version information from {raw_url}")
-
-# def start_updatef():
-#     updatefile_script = os.path.join(MAIN_DIR, "update.py")
-#     if os.path.exists(updatefile_script):
-#         print("Starting update.py...")
-#         return sp.Popen(["python3", updatefile_script], cwd=MAIN_DIR)
-#     else:
-#         raise FileNotFoundError(f"{updatefile_script} not found!")
+#+++++++++++++++++++++++++++++++++++++++++++++++++++++start_updatefile+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 def start_updatefile():
     updatefile_script = "/home/datamann/main/update.py"
-
     if not os.path.exists(updatefile_script):
         print(f"Warning: {updatefile_script} not found. Skipping update.")
         return None
 
-    # Start the updatefile.py script
     return subprocess.Popen(["python3", updatefile_script])
-
-# def monitor_and_update():
-#     ensure_directories()
-
-#     while True:
-#         try:
-#             # Check for version updates and download the necessary files
-#             update_version()
-
-#             # Start the updatefile.py script
-#             update_proc = start_updatefile()
-
-#             while update_proc.poll() is None:
-#                 print("Running update.py. Checking for updates in the background...")
-#                 time.sleep(60)
-#                 update_version()  # Check for updates periodically
-
-#             print("updatefile.py process has stopped. Restarting with updated files...")
-#         except FileNotFoundError as e:
-#             print(e)
-#             time.sleep(10)  # Retry after 10 seconds if updatefile.py not found
-#         except Exception as e:
-#             print(f"Error during monitoring: {e}")
-#         finally:
-#             time.sleep(5)
-# if __name__ == "__main__":
-   
-#     if connect_to_wifi(wifi_config1.get('ssid'), wifi_config1.get('password')):
-#         client = connect_mqtt()  
-#         publish_heartbeat(client, online=True)  
-#         load_buffer_from_file()
-
-       
-#     arm_state_value = buffer.get(device_info['device_id'], {}).get("D", "00")
-#     print(f"Restored arm state: {arm_state_value}")
-#     monitor_and_update()
-#     if arm_state_value == "10":
-#         arm_state["armed"] = True
-#         GPIO.output(D_PIN, GPIO.HIGH)
-#         print("System armed on startup.")
-#     else:
-#         arm_state["armed"] = False
-#         GPIO.output(D_PIN, GPIO.LOW)
-#         print("System disarmed on startup.")
-#     while True:
-#         message = json.dumps(buffer)
-#         client.publish(s_topic, message)
-#         time.sleep(1)
-
-
-import time
+#++++++++++++++++++++++++++++++++++++++++++++++++++monitor_and_update++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 def monitor_and_update(last_version):
     ensure_directories()
 
     try:
-        # Check for version updates and download the necessary files
         current_version = update_version()  # Get the current version
 
-        # Only check for updates if the version has changed
         if current_version != last_version:
             print("New version found, updating...")
             update_proc = start_updatefile()
 
-            # Only poll if the process was successfully started
             if update_proc:
                 while update_proc.poll() is None:
                     print("Running update.py. Checking for updates in the background...")
-                    time.sleep(60)  # Check the update periodically while running
+                    time.sleep(10)  
                 print("updatefile.py process has stopped. Restarting with updated files...")
             else:
                 print("Update process not started. Skipping update.")
 
-            # Return the updated version after the update is processed
             return current_version
         else:
             print("No version change detected. Skipping update.")
@@ -497,14 +431,9 @@ def main():
     last_version = None  # Initialize with no version
 
     while True:
-        # Monitor and update based on version change
         last_version = monitor_and_update(last_version)
-
-        # Publish message to MQTT
         message = json.dumps(buffer)
         client.publish(s_topic, message)
-
-        # Ensure the system continues to run without stopping
         time.sleep(1)  # Adjust the sleep time if needed
 
 
