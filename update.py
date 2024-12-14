@@ -391,7 +391,7 @@ def monitor_and_update(last_version):
             if update_proc:
                 while update_proc.poll() is None:
                     print("Running update.py. Checking for updates in the background...")
-                    time.sleep(10)  
+                    time.sleep(1)  
                 print("update.py process has stopped. Restarting with updated files...")
             else:
                 print("Update process not started. Skipping update.")
@@ -403,7 +403,7 @@ def monitor_and_update(last_version):
 
     except FileNotFoundError as e:
         print(e)
-        time.sleep(10) 
+        time.sleep(1) 
         return last_version
     except Exception as e:
         print(f"Error during monitoring: {e}")
