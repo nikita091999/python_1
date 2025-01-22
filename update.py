@@ -1,4 +1,3 @@
-
 import subprocess
 import time
 import json
@@ -293,6 +292,29 @@ def monitor_sensors(client):
         
         time.sleep(sensor_delay)
 
+# def connect_mqtt():
+#     client = mqtt.Client()
+#     client = mqtt.Client(protocol=mqtt.MQTTv311) 
+#     client.tls_set(certfile=None, keyfile=None, cert_reqs=ssl.CERT_NONE, tls_version=ssl.PROTOCOL_TLSv1_2)
+
+#     client.username_pw_set(mqtt_config.get('user'), mqtt_config.get('password'))
+#     client.tls_set()  
+#     client.on_message = on_message
+
+#     try:
+#         client.connect(mqtt_config.get('broker'), mqtt_config.get('port', 8883))
+#         print("Connected to MQTT broker")
+#         client.subscribe([
+#            (R1_topic,1),(R2_topic,1),(R3_topic,1),(R4_topic,1),(arm_disarm_cc, 1),(reset_topic, 1),(m_reset_topic, 1),(fd_topic,1) 
+#         ])
+#         print("Subscribed to MQTT topics")
+#         client.loop_start()
+
+#         threading.Thread(target=monitor_sensors, args=(client,), daemon=True).start()
+#         return client
+#     except Exception as e:
+#         print(f"Failed to connect MQTT: {e}")
+#         exit()
 
 
 def connect_mqtt():
@@ -379,6 +401,23 @@ def update_version():
     else:
         print(f"Failed to fetch version information from {raw_url}")
 
+# def start_updatef():
+#     updatefile_script = os.path.join(MAIN_DIR, "update.py")
+#     if os.path.exists(updatefile_script):
+#         print("Starting update.py...")
+#         return sp.Popen(["python3", updatefile_script], cwd=MAIN_DIR)
+#     else:
+#         raise FileNotFoundError(f"{updatefile_script} not found!")
+
+# def start_updatefile():
+#     updatefile_script = "/home/datamann/update.py"
+
+#     if not os.path.exists(updatefile_script):
+#         print(f"Warning: {updatefile_script} not found. Skipping update.")
+#         return None
+
+#     # Start the updatefile.py script
+#     return subprocess.Popen(["python3", updatefile_script])
 
 def start_updatefile():
     """Start the update.py script."""
@@ -388,6 +427,54 @@ def start_updatefile():
         return sp.Popen(["python3", updatefile_script], cwd=SECURITY_DIR)
     else:
         raise FileNotFoundError(f"{updatefile_script} not found!")
+
+# def monitor_and_update():
+#     ensure_directories()
+
+#     while True:
+#         try:
+#             # Check for version updates and download the necessary files
+#             update_version()
+
+#             # Start the updatefile.py script
+#             update_proc = start_updatefile()
+
+#             while update_proc.poll() is None:
+#                 print("Running update.py. Checking for updates in the background...")
+#                 time.sleep(60)
+#                 update_version()  # Check for updates periodically
+
+#             print("updatefile.py process has stopped. Restarting with updated files...")
+#         except FileNotFoundError as e:
+#             print(e)
+#             time.sleep(10)  # Retry after 10 seconds if updatefile.py not found
+#         except Exception as e:
+#             print(f"Error during monitoring: {e}")
+#         finally:
+#             time.sleep(5)
+# if __name__ == "__main__":
+   
+#     if connect_to_wifi(wifi_config1.get('ssid'), wifi_config1.get('password')):
+#         client = connect_mqtt()  
+#         publish_heartbeat(client, online=True)  
+#         load_buffer_from_file()
+
+       
+#     arm_state_value = buffer.get(device_info['device_id'], {}).get("D", "00")
+#     print(f"Restored arm state: {arm_state_value}")
+#     monitor_and_update()
+#     if arm_state_value == "10":
+#         arm_state["armed"] = True
+#         GPIO.output(D_PIN, GPIO.HIGH)
+#         print("System armed on startup.")
+#     else:
+#         arm_state["armed"] = False
+#         GPIO.output(D_PIN, GPIO.LOW)
+#         print("System disarmed on startup.")
+#     while True:
+#         message = json.dumps(buffer)
+#         client.publish(s_topic, message)
+#         time.sleep(1)
 
 
 import time
