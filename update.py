@@ -457,7 +457,7 @@ import json
 
 BASE_RAW_URL = "https://raw.githubusercontent.com/nikita091999/python_1/main/"
 #DEPOSIT_DIR = "/home/datamann/deposit"
-SECURITY_DIR = "/home/datamann/security"
+SECURITY_DIR = "/home/datamann/esecurity"
 FILES_TO_UPDATE = ["update.py", "config1.json", "version.json"]
 VERSION_FILE = os.path.join(SECURITY_DIR, "version.json")
 
@@ -800,7 +800,7 @@ def ensure_directory():
         os.makedirs(SECURITY_DIR)
         print(f"Created missing directory: {SECURITY_DIR}")
 
-def download_file(file_name, url):
+def download_file(file_name, url,extra_argument):
     try:
         print(f"Downloading {file_name} from {url}...")
         response = requests.get(url, timeout=10)
@@ -863,10 +863,10 @@ def update_version():
 #     return subprocess.Popen(["python3", updatefile_script])
 
 def start_updatefile():
-    """Start the updatefile.py script."""
-    updatefile_script = os.path.join(SECURITY_DIR, "updatefile.py")
+    """Start the update.py script."""
+    updatefile_script = os.path.join(SECURITY_DIR, "update.py")
     if os.path.exists(updatefile_script):
-        print("Starting updatefile.py...")
+        print("Starting update.py...")
         return sp.Popen(["python3", updatefile_script], cwd=SECURITY_DIR)
     else:
         raise FileNotFoundError(f"{updatefile_script} not found!")
@@ -992,4 +992,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
