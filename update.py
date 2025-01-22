@@ -11,7 +11,7 @@ import shutil
 import subprocess as sp
 import time
 import json
-
+print("hello")
 BASE_RAW_URL = "https://raw.githubusercontent.com/nikita091999/python_1/main/"
 DEPOSIT_DIR = "/home/datamann/deposit"
 MAIN_DIR = "/home/datamann"
