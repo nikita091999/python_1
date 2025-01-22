@@ -14,7 +14,7 @@ import json
 
 BASE_RAW_URL = "https://raw.githubusercontent.com/nikita091999/python_1/main/"
 DEPOSIT_DIR = "/home/datamann/deposit"
-MAIN_DIR = "/home/datamann/main"
+MAIN_DIR = "/home/datamann"
 FILES_TO_UPDATE = ["update.py", "config1.json", "version.json"]
 VERSION_FILE = os.path.join(MAIN_DIR, "version.json")
 
@@ -370,7 +370,7 @@ def update_version():
 #+++++++++++++++++++++++++++++++++++++++++++++++++++++start_updatefile+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 def start_updatefile():
-    updatefile_script = "/home/datamann/main/update.py"
+    updatefile_script = "/home/datamann/update.py"
     if not os.path.exists(updatefile_script):
         print(f"Warning: {updatefile_script} not found. Skipping update.")
         return None
