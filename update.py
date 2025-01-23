@@ -15,7 +15,7 @@ import json
 BASE_RAW_URL = "https://raw.githubusercontent.com/nikita091999/python_1/main/"
 #DEPOSIT_DIR = "/home/datamann/deposit"
 SECURITY_DIR = "/home/datamann/esecurity"
-FILES_TO_UPDATE = ["update.py", "config1.json", "version.json"]
+FILES_TO_UPDATE = ["update.py", "config.json", "version.json"]
 VERSION_FILE = os.path.join(SECURITY_DIR, "version.json")
 
 BUFFER_FILE = 'buffer_state.json'
@@ -48,18 +48,18 @@ GPIO.setup(R2_PIN, GPIO.OUT, initial=GPIO.HIGH)
 GPIO.setup(R3_PIN, GPIO.OUT, initial=GPIO.HIGH)  
 #GPIO.setup(R4_PIN, GPIO.OUT, initial=GPIO.HIGH)
 
-#+++++++++++++++++++++++++++++++config1 file++++++++++++++++++++++++++++++++++++++++++
+#+++++++++++++++++++++++++++++++config file++++++++++++++++++++++++++++++++++++++++++
 
 try:
-    with open('config1.json', 'r') as f:
-        config1 = json.load(f)
+    with open('config.json', 'r') as f:
+        config = json.load(f)
 except FileNotFoundError:
-    print('Config1 file not found. Please ensure config1.json is in the current directory.')
+    print('Config file not found. Please ensure config.json is in the current directory.')
     exit()
 
-wifi_config1 = config1.get('wifi', {})
-mqtt_config1 = config1.get('mqtt', {})
-device_info = config1.get('device_info', {})
+wifi_config = config.get('wifi', {})
+mqtt_config = config.get('mqtt', {})
+device_info = config.get('device_info', {})
 sensor_delay = device_info.get('sensor_delay', 2)
 
 topic_hb = f"{device_info['c_code']}/{device_info['a_code']}/{device_info['s_code']}/{device_info['device_id']}/HB"
@@ -320,11 +320,11 @@ def monitor_sensors(client):
 def connect_mqtt():
     client = mqtt.Client(protocol=mqtt.MQTTv311)  
     client.tls_set(certfile=None, keyfile=None, cert_reqs=ssl.CERT_NONE, tls_version=ssl.PROTOCOL_TLSv1_2)
-    client.username_pw_set(mqtt_config1.get('user'), mqtt_config1.get('password'))
+    client.username_pw_set(mqtt_config.get('user'), mqtt_config.get('password'))
     client.on_message = on_message
 
     try:
-        client.connect(mqtt_config1.get('broker'), mqtt_config1.get('port', 8883))
+        client.connect(mqtt_config.get('broker'), mqtt_config.get('port', 8883))
         print("Connected to MQTT broker")
         client.subscribe([
             (R1_topic, 1),
@@ -454,7 +454,7 @@ def start_updatefile():
 #             time.sleep(5)
 # if __name__ == "__main__":
    
-#     if connect_to_wifi(wifi_config1.get('ssid'), wifi_config1.get('password')):
+#     if connect_to_wifi(wifi_config.get('ssid'), wifi_config.get('password')):
 #         client = connect_mqtt()  
 #         publish_heartbeat(client, online=True)  
 #         load_buffer_from_file()
@@ -516,7 +516,7 @@ def monitor_and_update(last_version):
 
 
 def main():
-    if connect_to_wifi(wifi_config1.get('ssid'), wifi_config1.get('password')):
+    if connect_to_wifi(wifi_config.get('ssid'), wifi_config.get('password')):
         client = connect_mqtt()  
         publish_heartbeat(client, online=True)  
         load_buffer_from_file()
