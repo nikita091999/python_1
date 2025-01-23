@@ -13,8 +13,7 @@ import time
 import json
 
 BASE_RAW_URL = "https://raw.githubusercontent.com/nikita091999/python_1/main/"
-#DEPOSIT_DIR = "/home/datamann/deposit"
-SECURITY_DIR = "/home/datamann/esecurity"
+SECURITY_DIR = "/home/pi/ES4007"
 FILES_TO_UPDATE = ["update.py", "config.json", "version.json"]
 VERSION_FILE = os.path.join(SECURITY_DIR, "version.json")
 
@@ -132,191 +131,182 @@ def publish_heartbeat(client, online=True):
         print(f"Failed to publish heartbeat: {e}")
 #++++++++++++++++++++++++ machine Reset topic+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 def handle_reset(client):
-    print("System reset initiated. Rebooting...")
-    buffer[device_info['device_id']]["MR"] = "0107" 
-    publish_status(client)
-    subprocess.run(["sudo", "reboot"])
+    try:
+        print("System reset initiated. Rebooting...")
+        buffer[device_info['device_id']]["MR"] = "0107" 
+        publish_status(client)
+        subprocess.run(["sudo", "reboot"])
+    except Exception as e:
+        print(f"Error in handle_reset: {e}") 
 #++++++++++++++++++++++++++++ FD Topic++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 def handle_fd(client, payload):
-    if payload == "1105":  
-        GPIO.output(R1_PIN, GPIO.HIGH)  
-        buffer[device_info['device_id']]["R1"] = "1101"
-        buffer[device_info['device_id']]["FD"] = "1105"
-        print("FD triggered, turning R1 ON")
-    elif payload == "0105":  
-        GPIO.output(R1_PIN, GPIO.LOW)  
-        buffer[device_info['device_id']]["R1"] = "0101"
-        buffer[device_info['device_id']]["FD"] = "0105"
-        print("FD default, turning R1 OFF")
-    publish_status(client)
+    try:
+        if payload == "1105":  
+            GPIO.output(R1_PIN, GPIO.HIGH)  
+            buffer[device_info['device_id']]["R1"] = "1101"
+            buffer[device_info['device_id']]["FD"] = "1105"
+            print("FD triggered, turning R1 ON")
+        elif payload == "0105":  
+            GPIO.output(R1_PIN, GPIO.LOW)  
+            buffer[device_info['device_id']]["R1"] = "0101"
+            buffer[device_info['device_id']]["FD"] = "0105"
+            print("FD default, turning R1 OFF")
+        publish_status(client)
+    except Exception as e:
+        print(f"Error in handle_fd: {e}") 
 
 #+++++++++++++++++++++++++++++++++++ ARM & Disram++++++++++++++++++++++++++++++++++++++++++++++++++
 def handle_arm_disarm(client, payload):
-    if payload == "10": 
-        arm_state["armed"] = True
-        GPIO.output(D_PIN, GPIO.HIGH)
-        buffer[device_info['device_id']]["D"] = "10"
-        print("System armed. All sensors active.")
-    elif payload == "00":  
-        arm_state["armed"] = False
-        GPIO.output(D_PIN, GPIO.LOW)
-        buffer[device_info['device_id']]["D"] = "00"
-        print("System disarmed. Sensors inactive. Turning all relays OFF.")
-        GPIO.output(R1_PIN, GPIO.HIGH)  
-        GPIO.output(R2_PIN, GPIO.HIGH) 
-        GPIO.output(R3_PIN, GPIO.HIGH) 
-        GPIO.output(R4_PIN, GPIO.HIGH) 
-        buffer[device_info['device_id']]["R1"] = "0101"
-        buffer[device_info['device_id']]["R2"] = "0102"
-        buffer[device_info['device_id']]["R3"] = "0103"
-        buffer[device_info['device_id']]["R4"] = "0104"
-    save_buffer_to_file() 
-    publish_status(client)
+    try:
+        if payload == "10": 
+            arm_state["armed"] = True
+            GPIO.output(D_PIN, GPIO.HIGH)
+            buffer[device_info['device_id']]["D"] = "10"
+            print("System armed. All sensors active.")
+        elif payload == "00":  
+            arm_state["armed"] = False
+            GPIO.output(D_PIN, GPIO.LOW)
+            buffer[device_info['device_id']]["D"] = "00"
+            print("System disarmed. Sensors inactive. Turning all relays OFF.")
+            GPIO.output(R1_PIN, GPIO.HIGH)  
+            GPIO.output(R2_PIN, GPIO.HIGH) 
+            GPIO.output(R3_PIN, GPIO.HIGH) 
+           # GPIO.output(R4_PIN, GPIO.HIGH) 
+            buffer[device_info['device_id']]["R1"] = "0101"
+            buffer[device_info['device_id']]["R2"] = "0102"
+            buffer[device_info['device_id']]["R3"] = "0103"
+            buffer[device_info['device_id']]["R4"] = "0104"
+        save_buffer_to_file() 
+        publish_status(client)
+    except Exception as e:
+        print(f"Error in handle_arm_disarm: {e}")  
 #++++++++++++++++++++++++++++++++++++++++ sub topic +++++++++++++++++++++++++++++++++++++++++++++++++++
 def on_message(client, userdata, message):
-    payload = message.payload.decode('utf-8')
-    print(f"Received MQTT message: {payload} on topic: {message.topic}")
-               #arm and Disram  
-    if message.topic == arm_disarm_cc:
-        handle_arm_disarm(client, payload)
-        return 
-           
-    if message.topic == m_reset_topic:  
-        handle_reset(client)
-        return  
-    if message.topic == reset_topic:
-        print("Received reset command. Resetting all relays to OFF state.")
-        GPIO.output(R1_PIN, GPIO.HIGH)  
-        GPIO.output(R2_PIN, GPIO.HIGH) 
-        GPIO.output(R3_PIN, GPIO.HIGH)  
-        GPIO.output(R4_PIN, GPIO.HIGH) 
-        buffer[device_info['device_id']]["R1"] = "0101" 
-        buffer[device_info['device_id']]["R2"] = "0102" 
-        buffer[device_info['device_id']]["R3"] = "0103"
-        buffer[device_info['device_id']]["R4"] = "0104"
-        buffer[device_info['device_id']]["FD"] = "0105"
-        publish_status(client)  
-        return  
-    if message.topic == fd_topic:  
-        handle_fd(client, payload)
-        return  
-
-    if not arm_state["armed"]:
-        print("System is disarmed. Ignoring sensor or relay commands.")
-        return
-
-    if payload == "1101":
-        GPIO.output(R1_PIN, GPIO.LOW)
-        buffer[device_info['device_id']]["R1"] = "1101"
-        print("R1 ON via MQTT")
-    elif payload == "0101":
-        GPIO.output(R1_PIN, GPIO.HIGH)
-        buffer[device_info['device_id']]["R1"] = "0101"
-        print("R1 OFF via MQTT")
-    elif payload == "1102":
-        GPIO.output(R2_PIN, GPIO.LOW)
-        buffer[device_info['device_id']]["R2"] = "1102"
-        print("R2 ON via MQTT")
-    elif payload == "0102":
-        GPIO.output(R2_PIN, GPIO.HIGH)
-        buffer[device_info['device_id']]["R2"] = "0102"
-        print("R2 OFF via MQTT")
-
-    elif payload == "1103":
-        GPIO.output(R3_PIN, GPIO.LOW)
-        buffer[device_info['device_id']]["R3"] = "1103"
-        print("R3 ON via MQTT")
-    elif payload == "0103":
-        GPIO.output(R3_PIN, GPIO.HIGH)
-        buffer[device_info['device_id']]["R3"] = "0103"
-        print("R3 OFF via MQTT")
-
-    elif payload == "1104":
-        GPIO.output(R4_PIN, GPIO.LOW)
-        buffer[device_info['device_id']]["R4"] = "1104"
-        print("R4 ON via MQTT")
-    elif payload == "0104":
-        GPIO.output(R4_PIN, GPIO.HIGH)
-        buffer[device_info['device_id']]["R4"] = "0104"
-        print("R4 OFF via MQTT")
-    publish_status(client)
-
-def monitor_sensors(client):
-    prev_s1 = GPIO.input(S1_PIN)
-    prev_s2 = GPIO.input(S2_PIN)
-    prev_s3 = GPIO.input(S3_PIN)
-    prev_s4 = GPIO.input(S4_PIN)
-    while True:
-        if not arm_state["armed"]:
-            time.sleep(sensor_delay)  
-            continue
-
-        current_s1 = GPIO.input(S1_PIN)
-        current_s2 = GPIO.input(S2_PIN)
-        current_s3 = GPIO.input(S3_PIN)
-        current_s4 = GPIO.input(S4_PIN)
-
-        if current_s1 != prev_s1:
-            if current_s1 == GPIO.HIGH:
-                print("S1 triggered, turning R1 ON")
-                GPIO.output(R1_PIN, GPIO.LOW)
-                buffer[device_info['device_id']]["R1"] = "1101"
-                buffer[device_info['device_id']]["S1"] = "11"
-
-         #   publish_status(client)
-
-        if current_s2 != prev_s2:
-            if current_s2 == GPIO.HIGH:
-                print("S2 triggered, turning R2 ON")
-                GPIO.output(R2_PIN, GPIO.LOW)
-                buffer[device_info['device_id']]["R2"] = "1102"
-                buffer[device_info['device_id']]["S2"] = "12"
-
-        if current_s3 != prev_s3:
-            if current_s3 == GPIO.HIGH:
-                print("S3 triggered, turning R3 ON")
-                GPIO.output(R3_PIN, GPIO.LOW)
-                buffer[device_info['device_id']]["R3"] = "1103"
-                buffer[device_info['device_id']]["S3"] = "13"
-
-        if current_s4 != prev_s4:
-            if current_s4 == GPIO.HIGH:
-                print("S4 triggered, turning R4 ON")
-                GPIO.output(R4_PIN, GPIO.LOW)
-                buffer[device_info['device_id']]["R4"] = "1104"
-                buffer[device_info['device_id']]["S4"] = "14"
+    try:
+        payload = message.payload.decode('utf-8')
+        print(f"Received MQTT message: {payload} on topic: {message.topic}")
+                #arm and Disram  
+        if message.topic == arm_disarm_cc:
+            handle_arm_disarm(client, payload)
+            return 
             
-            publish_status(client)
+        if message.topic == m_reset_topic:  
+            handle_reset(client)
+            return  
+        if message.topic == reset_topic:
+            print("Received reset command. Resetting all relays to OFF state.")
+            GPIO.output(R1_PIN, GPIO.HIGH)  
+            GPIO.output(R2_PIN, GPIO.HIGH) 
+            GPIO.output(R3_PIN, GPIO.HIGH)  
+        # GPIO.output(R4_PIN, GPIO.HIGH) 
+            buffer[device_info['device_id']]["R1"] = "0101" 
+            buffer[device_info['device_id']]["R2"] = "0102" 
+            buffer[device_info['device_id']]["R3"] = "0103"
+            buffer[device_info['device_id']]["R4"] = "0104"
+            buffer[device_info['device_id']]["FD"] = "0105"
+            publish_status(client)  
+            return  
+        if message.topic == fd_topic:  
+            handle_fd(client, payload)
+            return  
 
-        prev_s1, prev_s2 = current_s1, current_s2
-        
-        time.sleep(sensor_delay)
+        if not arm_state["armed"]:
+            print("System is disarmed. Ignoring sensor or relay commands.")
+            return
 
-# def connect_mqtt():
-#     client = mqtt.Client()
-#     client = mqtt.Client(protocol=mqtt.MQTTv311) 
-#     client.tls_set(certfile=None, keyfile=None, cert_reqs=ssl.CERT_NONE, tls_version=ssl.PROTOCOL_TLSv1_2)
+        if payload == "1101":
+            GPIO.output(R1_PIN, GPIO.LOW)
+            buffer[device_info['device_id']]["R1"] = "1101"
+            print("R1 ON via MQTT")
+        elif payload == "0101":
+            GPIO.output(R1_PIN, GPIO.HIGH)
+            buffer[device_info['device_id']]["R1"] = "0101"
+            print("R1 OFF via MQTT")
+        elif payload == "1102":
+            GPIO.output(R2_PIN, GPIO.LOW)
+            buffer[device_info['device_id']]["R2"] = "1102"
+            print("R2 ON via MQTT")
+        elif payload == "0102":
+            GPIO.output(R2_PIN, GPIO.HIGH)
+            buffer[device_info['device_id']]["R2"] = "0102"
+            print("R2 OFF via MQTT")
 
-#     client.username_pw_set(mqtt_config.get('user'), mqtt_config.get('password'))
-#     client.tls_set()  
-#     client.on_message = on_message
+        elif payload == "1103":
+            GPIO.output(R3_PIN, GPIO.LOW)
+            buffer[device_info['device_id']]["R3"] = "1103"
+            print("R3 ON via MQTT")
+        elif payload == "0103":
+            GPIO.output(R3_PIN, GPIO.HIGH)
+            buffer[device_info['device_id']]["R3"] = "0103"
+            print("R3 OFF via MQTT")
 
-#     try:
-#         client.connect(mqtt_config.get('broker'), mqtt_config.get('port', 8883))
-#         print("Connected to MQTT broker")
-#         client.subscribe([
-#            (R1_topic,1),(R2_topic,1),(R3_topic,1),(R4_topic,1),(arm_disarm_cc, 1),(reset_topic, 1),(m_reset_topic, 1),(fd_topic,1) 
-#         ])
-#         print("Subscribed to MQTT topics")
-#         client.loop_start()
+        elif payload == "1104":
+        # GPIO.output(R4_PIN, GPIO.LOW)
+            buffer[device_info['device_id']]["R4"] = "1104"
+            print("R4 ON via MQTT")
+        elif payload == "0104":
+        # GPIO.output(R4_PIN, GPIO.HIGH)
+            buffer[device_info['device_id']]["R4"] = "0104"
+            print("R4 OFF via MQTT")
+        publish_status(client)
+    except Exception as e:
+        print(f"Error in on_message: {e}")  
+#+++++++++++++++++++++++++++++++++++++++++monitor_sensors+++++++++++++++++++++++++++++++++++++++++++++++
+def monitor_sensors(client):
+    try:
+        prev_s1 = GPIO.input(S1_PIN)
+        prev_s2 = GPIO.input(S2_PIN)
+        prev_s3 = GPIO.input(S3_PIN)
+        prev_s4 = GPIO.input(S4_PIN)
+        while True:
+            if not arm_state["armed"]:
+                time.sleep(sensor_delay)  
+                continue
 
-#         threading.Thread(target=monitor_sensors, args=(client,), daemon=True).start()
-#         return client
-#     except Exception as e:
-#         print(f"Failed to connect MQTT: {e}")
-#         exit()
+            current_s1 = GPIO.input(S1_PIN)
+            current_s2 = GPIO.input(S2_PIN)
+            current_s3 = GPIO.input(S3_PIN)
+            current_s4 = GPIO.input(S4_PIN)
 
+            if current_s1 != prev_s1:
+                if current_s1 == GPIO.HIGH:
+                    print("S1 triggered, turning R1 ON")
+                    GPIO.output(R1_PIN, GPIO.LOW)
+                    buffer[device_info['device_id']]["R1"] = "1101"
+                    buffer[device_info['device_id']]["S1"] = "11"
 
+            #   publish_status(client)
+
+            if current_s2 != prev_s2:
+                if current_s2 == GPIO.HIGH:
+                    print("S2 triggered, turning R2 ON")
+                    GPIO.output(R2_PIN, GPIO.LOW)
+                    buffer[device_info['device_id']]["R2"] = "1102"
+                    buffer[device_info['device_id']]["S2"] = "12"
+
+            if current_s3 != prev_s3:
+                if current_s3 == GPIO.HIGH:
+                    print("S3 triggered, turning R3 ON")
+                    GPIO.output(R3_PIN, GPIO.LOW)
+                    buffer[device_info['device_id']]["R3"] = "1103"
+                    buffer[device_info['device_id']]["S3"] = "13"
+
+            if current_s4 != prev_s4:
+                if current_s4 == GPIO.HIGH:
+                    print("S4 triggered, turning R4 ON")
+                # GPIO.output(R4_PIN, GPIO.LOW)
+                    buffer[device_info['device_id']]["R4"] = "1104"
+                    buffer[device_info['device_id']]["S4"] = "14"
+                
+                publish_status(client)
+
+            prev_s1, prev_s2 = current_s1, current_s2
+            
+            time.sleep(sensor_delay)
+    except Exception as e:
+        print(f"Error in monitor_sensors: {e}") 
+
+#++++++++++++++++++++++++++++++++++++++connect_mqtt++++++++++++++++++++++++++++++++++++++++++++
 def connect_mqtt():
     client = mqtt.Client(protocol=mqtt.MQTTv311)  
     client.tls_set(certfile=None, keyfile=None, cert_reqs=ssl.CERT_NONE, tls_version=ssl.PROTOCOL_TLSv1_2)
@@ -344,19 +334,17 @@ def connect_mqtt():
     except Exception as e:
         print(f"Failed to connect MQTT: {e}")
         exit()
+#++++++++++++++++++++++++++++++++++++++++++++++++ensure_directory++++++++++++++++++++++++++++++++++++++++++
 
-
-# def ensure_directories():
-#     for directory in [DEPOSIT_DIR, MAIN_DIR]:
-#         if not os.path.exists(directory):
-#             os.makedirs(directory)
-#             print(f"Created missing directory: {directory}")
 def ensure_directory():
-    """Ensure the security folder exists."""
-    if not os.path.exists(SECURITY_DIR):
-        os.makedirs(SECURITY_DIR)
-        print(f"Created missing directory: {SECURITY_DIR}")
-
+    try:
+        """Ensure the security folder exists."""
+        if not os.path.exists(SECURITY_DIR):
+            os.makedirs(SECURITY_DIR)
+            print(f"Created missing directory: {SECURITY_DIR}")
+    except Exception as e:
+        print(f"Failed to ensure_directory: {e}")
+#+++++++++++++++++++++++++++++++++++++++download_file+++++++++++++++++++++++++++++++++++++++++++++++++
 def download_file(file_name, url,extra_argument):
     try:
         print(f"Downloading {file_name} from {url}...")
@@ -370,55 +358,39 @@ def download_file(file_name, url,extra_argument):
         print(f"HTTP error while updating {file_name}: {http_err}")
     except Exception as e:
         print(f"Error updating {file_name}: {e}")
-
+#+++++++++++++++++++++++++++++++++++++++++get current version check++++++++++++++++++++++++++++++++++++++++++
 def get_current_version():
     if os.path.exists(VERSION_FILE):
         with open(VERSION_FILE, "r") as file:
             version_data = json.load(file)
             return version_data.get("version", "")
     return ""
-
+#++++++++++++++++++++++++++++++++++++++++++update version++++++++++++++++++++++++++++++++++++++++++++++
 def update_version():
-    # Check the latest version from the server
-    raw_url = BASE_RAW_URL + "version.json"
-    response = requests.get(raw_url, timeout=10)
-    if response.status_code == 200:
-        latest_version_data = response.json()
-        latest_version = latest_version_data.get("version", "")
-        current_version = get_current_version()
+    try:
+        raw_url = BASE_RAW_URL + "version.json"
+        response = requests.get(raw_url, timeout=10)
+        if response.status_code == 200:
+            latest_version_data = response.json()
+            latest_version = latest_version_data.get("version", "")
+            current_version = get_current_version()
 
-        if latest_version != current_version:
-            print(f"New version found: {latest_version}. Updating files...")
-            # Download the new files only if version is updated
-            for file_name in FILES_TO_UPDATE:
-                download_file(file_name, BASE_RAW_URL + file_name, SECURITY_DIR)
-            # Update the version
-            with open(VERSION_FILE, "w") as file:
-                json.dump(latest_version_data, file, indent=4)
-            print("Version updated successfully.")
+            if latest_version != current_version:
+                print(f"New version found: {latest_version}. Updating files...")
+                # Download the new files only if version is updated
+                for file_name in FILES_TO_UPDATE:
+                    download_file(file_name, BASE_RAW_URL + file_name, SECURITY_DIR)
+                # Update the version
+                with open(VERSION_FILE, "w") as file:
+                    json.dump(latest_version_data, file, indent=4)
+                print("Version updated successfully.")
+            else:
+                print("No new version available. Skipping update.")
         else:
-            print("No new version available. Skipping update.")
-    else:
-        print(f"Failed to fetch version information from {raw_url}")
-
-# def start_updatef():
-#     updatefile_script = os.path.join(MAIN_DIR, "update.py")
-#     if os.path.exists(updatefile_script):
-#         print("Starting update.py...")
-#         return sp.Popen(["python3", updatefile_script], cwd=MAIN_DIR)
-#     else:
-#         raise FileNotFoundError(f"{updatefile_script} not found!")
-
-# def start_updatefile():
-#     updatefile_script = "/home/datamann/update.py"
-
-#     if not os.path.exists(updatefile_script):
-#         print(f"Warning: {updatefile_script} not found. Skipping update.")
-#         return None
-
-#     # Start the updatefile.py script
-#     return subprocess.Popen(["python3", updatefile_script])
-
+            print(f"Failed to fetch version information from {raw_url}")
+    except Exception as e:
+        print(f"Failed to update_version: {e}")
+#+++++++++++++++++++++++++++++++++++++++++++++++++++start updatefile++++++++++++++++++++++++++++++++++++
 def start_updatefile():
     """Start the update.py script."""
     updatefile_script = os.path.join(SECURITY_DIR, "update.py")
@@ -428,79 +400,23 @@ def start_updatefile():
     else:
         raise FileNotFoundError(f"{updatefile_script} not found!")
 
-# def monitor_and_update():
-#     ensure_directories()
-
-#     while True:
-#         try:
-#             # Check for version updates and download the necessary files
-#             update_version()
-
-#             # Start the updatefile.py script
-#             update_proc = start_updatefile()
-
-#             while update_proc.poll() is None:
-#                 print("Running update.py. Checking for updates in the background...")
-#                 time.sleep(60)
-#                 update_version()  # Check for updates periodically
-
-#             print("updatefile.py process has stopped. Restarting with updated files...")
-#         except FileNotFoundError as e:
-#             print(e)
-#             time.sleep(10)  # Retry after 10 seconds if updatefile.py not found
-#         except Exception as e:
-#             print(f"Error during monitoring: {e}")
-#         finally:
-#             time.sleep(5)
-# if __name__ == "__main__":
-   
-#     if connect_to_wifi(wifi_config.get('ssid'), wifi_config.get('password')):
-#         client = connect_mqtt()  
-#         publish_heartbeat(client, online=True)  
-#         load_buffer_from_file()
-
-       
-#     arm_state_value = buffer.get(device_info['device_id'], {}).get("D", "00")
-#     print(f"Restored arm state: {arm_state_value}")
-#     monitor_and_update()
-#     if arm_state_value == "10":
-#         arm_state["armed"] = True
-#         GPIO.output(D_PIN, GPIO.HIGH)
-#         print("System armed on startup.")
-#     else:
-#         arm_state["armed"] = False
-#         GPIO.output(D_PIN, GPIO.LOW)
-#         print("System disarmed on startup.")
-#     while True:
-#         message = json.dumps(buffer)
-#         client.publish(s_topic, message)
-#         time.sleep(1)
-
-
-import time
-
+#+++++++++++++++++++++++++++++++++++++++++++++++++monitor and update++++++++++++++++++++++++++++++++++++++++++++++++
 def monitor_and_update(last_version):
     #ensure_directories()
 
     try:
-        # Check for version updates and download the necessary files
-        current_version = update_version()  # Get the current version
-
-        # Only check for updates if the version has changed
+        current_version = update_version() 
         if current_version != last_version:
             print("New version found, updating...")
             update_proc = start_updatefile()
-
-            # Only poll if the process was successfully started
             if update_proc:
                 while update_proc.poll() is None:
                     print("Running update.py. Checking for updates in the background...")
-                    time.sleep(60)  # Check the update periodically while running
+                    time.sleep(60)  
                 print("updatefile.py process has stopped. Restarting with updated files...")
             else:
                 print("Update process not started. Skipping update.")
 
-            # Return the updated version after the update is processed
             return current_version
         else:
             print("No version change detected. Skipping update.")
@@ -508,13 +424,13 @@ def monitor_and_update(last_version):
 
     except FileNotFoundError as e:
         print(e)
-        time.sleep(10)  # Retry after 10 seconds if updatefile.py not found
+        time.sleep(10)  
         return last_version
     except Exception as e:
         print(f"Error during monitoring: {e}")
         return last_version
 
-
+#+++++++++++++++++++++++++++++++++++++++++++++++++++main function+++++++++++++++++++++++++++++++++++++++++
 def main():
     if connect_to_wifi(wifi_config.get('ssid'), wifi_config.get('password')):
         client = connect_mqtt()  
@@ -536,15 +452,12 @@ def main():
     last_version = None  # Initialize with no version
 
     while True:
-        # Monitor and update based on version change
         last_version = monitor_and_update(last_version)
 
-        # Publish message to MQTT
         message = json.dumps(buffer)
         client.publish(s_topic, message)
 
-        # Ensure the system continues to run without stopping
-        time.sleep(1)  # Adjust the sleep time if needed
+        time.sleep(1)  
 
 
 if __name__ == "__main__":
