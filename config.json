@@ -1,6 +1,6 @@
 {
     "wifi": {
-        "ssid": "DataMann",
+        "ssid": "DataMann_5G",
         "password": "Datamann@2022"
     },
     "mqtt": {
