@@ -1,7 +1,7 @@
 {
     "wifi": {
-        "ssid": "DataMann",
-        "password": "Datamann@2022"
+        "ssid": "POWERCON",
+        "password": "pvipl3003"
     },
     "mqtt": {
         "broker": "tunnel.datamann.in",
