@@ -13,7 +13,7 @@ import time
 import json
 
 BASE_RAW_URL = "https://raw.githubusercontent.com/nikita091999/python_1/main/"
-SECURITY_DIR = "/home/pi/nikita/ES4007"
+SECURITY_DIR = "/home/raspberrypi/ES4007"
 FILES_TO_UPDATE = ["Esecurity.py", "config.json", "version.json"]
 VERSION_FILE = os.path.join(SECURITY_DIR, "version.json")
 
