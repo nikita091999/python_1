@@ -185,72 +185,90 @@ def on_message(client, userdata, message):
     try:
         payload = message.payload.decode('utf-8')
         print(f"Received MQTT message: {payload} on topic: {message.topic}")
-                #arm and Disram  
+
+        # Handle arm and disarm
         if message.topic == arm_disarm_cc:
             handle_arm_disarm(client, payload)
-            return 
-            
-        if message.topic == m_reset_topic:  
-            handle_reset(client)
-            return  
+            return
+        
+        # Check for m_reset_topic specifically for 0107
+        if message.topic == m_reset_topic:
+            if payload == "0107":  # Only process 0107 for MR topic
+                handle_reset(client)
+            else:
+                print(f"Invalid payload for MR: {payload}. Ignoring.")
+            return
+        
+        # Check for reset_topic specifically for 0106
         if message.topic == reset_topic:
-            print("Received reset command. Resetting all relays to OFF state.")
-            GPIO.output(R1_PIN, GPIO.HIGH)  
-            GPIO.output(R2_PIN, GPIO.HIGH) 
-            GPIO.output(R3_PIN, GPIO.HIGH)  
-        # GPIO.output(R4_PIN, GPIO.HIGH) 
-            buffer[device_info['device_id']]["R1"] = "0101" 
-            buffer[device_info['device_id']]["R2"] = "0102" 
-            buffer[device_info['device_id']]["R3"] = "0103"
-            buffer[device_info['device_id']]["R4"] = "0104"
-            buffer[device_info['device_id']]["FD"] = "0105"
-            publish_status(client)  
-            return  
-        if message.topic == fd_topic:  
+            if payload == "0106":  # Only process 0106 for RR topic
+                print("Received reset command. Resetting all relays to OFF state.")
+                GPIO.output(R1_PIN, GPIO.HIGH)  
+                GPIO.output(R2_PIN, GPIO.HIGH) 
+                GPIO.output(R3_PIN, GPIO.HIGH)  
+                buffer[device_info['device_id']]["R1"] = "0101" 
+                buffer[device_info['device_id']]["R2"] = "0102" 
+                buffer[device_info['device_id']]["R3"] = "0103"
+                buffer[device_info['device_id']]["R4"] = "0104"
+                publish_status(client)  
+            else:
+                print(f"Invalid payload for RR: {payload}. Ignoring.")
+            return
+        
+        if message.topic == fd_topic:
             handle_fd(client, payload)
             return  
 
+        # Only process commands if the system is armed
         if not arm_state["armed"]:
             print("System is disarmed. Ignoring sensor or relay commands.")
             return
 
-        if payload == "1101":
-            GPIO.output(R1_PIN, GPIO.LOW)
-            buffer[device_info['device_id']]["R1"] = "1101"
-            print("R1 ON via MQTT")
-        elif payload == "0101":
-            GPIO.output(R1_PIN, GPIO.HIGH)
-            buffer[device_info['device_id']]["R1"] = "0101"
-            print("R1 OFF via MQTT")
-        elif payload == "1102":
-            GPIO.output(R2_PIN, GPIO.LOW)
-            buffer[device_info['device_id']]["R2"] = "1102"
-            print("R2 ON via MQTT")
-        elif payload == "0102":
-            GPIO.output(R2_PIN, GPIO.HIGH)
-            buffer[device_info['device_id']]["R2"] = "0102"
-            print("R2 OFF via MQTT")
+        # Check which relay is being controlled based on the topic
+        if message.topic == R1_topic:  # If message is for R1
+            if payload == "1101":
+                GPIO.output(R1_PIN, GPIO.LOW)
+                buffer[device_info['device_id']]["R1"] = "1101"
+                print("R1 ON via MQTT")
+            elif payload == "0101":
+                GPIO.output(R1_PIN, GPIO.HIGH)
+                buffer[device_info['device_id']]["R1"] = "0101"
+                print("R1 OFF via MQTT")
+        
+        elif message.topic == R2_topic:  # If message is for R2
+            if payload == "1102":
+                GPIO.output(R2_PIN, GPIO.LOW)
+                buffer[device_info['device_id']]["R2"] = "1102"
+                print("R2 ON via MQTT")
+            elif payload == "0102":
+                GPIO.output(R2_PIN, GPIO.HIGH)
+                buffer[device_info['device_id']]["R2"] = "0102"
+                print("R2 OFF via MQTT")
 
-        elif payload == "1103":
-            GPIO.output(R3_PIN, GPIO.LOW)
-            buffer[device_info['device_id']]["R3"] = "1103"
-            print("R3 ON via MQTT")
-        elif payload == "0103":
-            GPIO.output(R3_PIN, GPIO.HIGH)
-            buffer[device_info['device_id']]["R3"] = "0103"
-            print("R3 OFF via MQTT")
+        elif message.topic == R3_topic:  # If message is for R3
+            if payload == "1103":
+                GPIO.output(R3_PIN, GPIO.LOW)
+                buffer[device_info['device_id']]["R3"] = "1103"
+                print("R3 ON via MQTT")
+            elif payload == "0103":
+                GPIO.output(R3_PIN, GPIO.HIGH)
+                buffer[device_info['device_id']]["R3"] = "0103"
+                print("R3 OFF via MQTT")
 
-        elif payload == "1104":
-        # GPIO.output(R4_PIN, GPIO.LOW)
-            buffer[device_info['device_id']]["R4"] = "1104"
-            print("R4 ON via MQTT")
-        elif payload == "0104":
-        # GPIO.output(R4_PIN, GPIO.HIGH)
-            buffer[device_info['device_id']]["R4"] = "0104"
-            print("R4 OFF via MQTT")
-        publish_status(client)
+        elif message.topic == R4_topic:  # If message is for R4
+            if payload == "1104":
+                GPIO.output(R4_PIN, GPIO.LOW)  # Assuming you want to turn it ON
+                buffer[device_info['device_id']]["R4"] = "1104"
+                print("R4 ON via MQTT")
+            elif payload == "0104":
+                GPIO.output(R4_PIN, GPIO.HIGH)  # Assuming you want to turn it OFF
+                buffer[device_info['device_id']]["R4"] = "0104"
+                print("R4 OFF via MQTT")
+
+        publish_status(client)  # Publish the status at the end if relevant
+        
     except Exception as e:
-        print(f"Error in on_message: {e}")  
+        print(f"Error in on_message: {e}")
 #+++++++++++++++++++++++++++++++++++++++++monitor_sensors+++++++++++++++++++++++++++++++++++++++++++++++
 def monitor_sensors(client):
     try:
