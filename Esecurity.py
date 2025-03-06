@@ -98,11 +98,23 @@ def load_buffer_from_file():
 
 
 #++++++++++++++++++++++++++++++++++ wifi ++++++++++++++++++++++++++++++++++++++++++
+# def connect_to_wifi(ssid, password, max_attempts=5, retry_delay=10):
+#     print(f"Connecting to Wi-Fi: {ssid}")
+#     for attempt in range(max_attempts):
+#         try:
+#             subprocess.run(['nmcli', 'dev', 'wifi', 'connect', ssid, 'password', password], check=True)
+#             print(f"Connected to {ssid}")
+#             return True
+#         except subprocess.CalledProcessError:
+#             print(f"Attempt {attempt + 1}/{max_attempts} failed. Retrying in {retry_delay} seconds...")
+#             time.sleep(retry_delay)
+#     print("Failed to connect to Wi-Fi.")
+#     return False
 def connect_to_wifi(ssid, password, max_attempts=5, retry_delay=10):
     print(f"Connecting to Wi-Fi: {ssid}")
     for attempt in range(max_attempts):
         try:
-            subprocess.run(['nmcli', 'dev', 'wifi', 'connect', ssid, 'password', password], check=True)
+            subprocess.run(['sudo', 'nmcli', 'dev', 'wifi', 'connect', ssid, 'password', password], check=True)
             print(f"Connected to {ssid}")
             return True
         except subprocess.CalledProcessError:
