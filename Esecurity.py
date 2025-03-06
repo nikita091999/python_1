@@ -98,18 +98,6 @@ def load_buffer_from_file():
 
 
 #++++++++++++++++++++++++++++++++++ wifi ++++++++++++++++++++++++++++++++++++++++++
-# def connect_to_wifi(ssid, password, max_attempts=5, retry_delay=10):
-#     print(f"Connecting to Wi-Fi: {ssid}")
-#     for attempt in range(max_attempts):
-#         try:
-#             subprocess.run(['nmcli', 'dev', 'wifi', 'connect', ssid, 'password', password], check=True)
-#             print(f"Connected to {ssid}")
-#             return True
-#         except subprocess.CalledProcessError:
-#             print(f"Attempt {attempt + 1}/{max_attempts} failed. Retrying in {retry_delay} seconds...")
-#             time.sleep(retry_delay)
-#     print("Failed to connect to Wi-Fi.")
-#     return False
 def connect_to_wifi(ssid, password, max_attempts=5, retry_delay=10):
     print(f"Connecting to Wi-Fi: {ssid}")
     for attempt in range(max_attempts):
@@ -122,6 +110,18 @@ def connect_to_wifi(ssid, password, max_attempts=5, retry_delay=10):
             time.sleep(retry_delay)
     print("Failed to connect to Wi-Fi.")
     return False
+# def connect_to_wifi(ssid, password, max_attempts=5, retry_delay=10):
+#     print(f"Connecting to Wi-Fi: {ssid}")
+#     for attempt in range(max_attempts):
+#         try:
+#             subprocess.run(['nmcli', 'dev', 'wifi', 'connect', ssid, 'password', password], check=True)
+#             print(f"Connected to {ssid}")
+#             return True
+#         except subprocess.CalledProcessError:
+#             print(f"Attempt {attempt + 1}/{max_attempts} failed. Retrying in {retry_delay} seconds...")
+#             time.sleep(retry_delay)
+#     print("Failed to connect to Wi-Fi.")
+#     return False
 #++++++++++++++++++++++++++++++++pubslish status+++++++++++++++++++++++++++++++++++++++++++++++++
 def publish_status(client):
     try:
@@ -202,22 +202,25 @@ def on_message(client, userdata, message):
             handle_arm_disarm(client, payload)
             return 
             
-        if message.topic == m_reset_topic:  
-            handle_reset(client)
-            return  
+        if message.topic == m_reset_topic: 
+            if payload == "0107": 
+             handle_reset(client)
+            return 
+             
         if message.topic == reset_topic:
-            print("Received reset command. Resetting all relays to OFF state.")
-            GPIO.output(R1_PIN, GPIO.HIGH)  
-            GPIO.output(R2_PIN, GPIO.HIGH) 
-            GPIO.output(R3_PIN, GPIO.HIGH)  
-        # GPIO.output(R4_PIN, GPIO.HIGH) 
-            buffer[device_info['device_id']]["R1"] = "0101" 
-            buffer[device_info['device_id']]["R2"] = "0102" 
-            buffer[device_info['device_id']]["R3"] = "0103"
-            buffer[device_info['device_id']]["R4"] = "0104"
-            buffer[device_info['device_id']]["FD"] = "0105"
-            publish_status(client)  
-            return  
+            if payload == "0106":
+                print("Received reset command. Resetting all relays to OFF state.")
+                GPIO.output(R1_PIN, GPIO.HIGH)  
+                GPIO.output(R2_PIN, GPIO.HIGH) 
+                GPIO.output(R3_PIN, GPIO.HIGH)  
+            # GPIO.output(R4_PIN, GPIO.HIGH) 
+                buffer[device_info['device_id']]["R1"] = "0101" 
+                buffer[device_info['device_id']]["R2"] = "0102" 
+                buffer[device_info['device_id']]["R3"] = "0103"
+                buffer[device_info['device_id']]["R4"] = "0104"
+                buffer[device_info['device_id']]["FD"] = "0105"
+                publish_status(client)  
+                return  
         if message.topic == fd_topic:  
             handle_fd(client, payload)
             return  
